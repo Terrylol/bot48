@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber48 运营后台</title>
+    <style>
+        body { margin: 0; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background: #0f1020; color: #ecedf5; }
+        .container { max-width: 1240px; margin: 0 auto; padding: 20px; }
+        .panel { background: #17192f; border: 1px solid #2a2d4d; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border-bottom: 1px solid #2f3254; text-align: left; padding: 8px; vertical-align: top; }
+        th { color: #b6bdf5; font-weight: 600; }
+        input, textarea, select { width: 100%; margin: 6px 0; border-radius: 8px; border: 1px solid #383d67; background: #11142a; color: #eef0ff; padding: 8px; box-sizing: border-box; }
+        .row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .btn { background: #6271ff; color: white; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+        .muted { color: #9ca3d1; font-size: 13px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Cyber48 运营后台</h1>
+    <p class="muted">用于查看全部用户、状态、帖子、评论，并修改偶像基础信息与状态</p>
+    <div class="panel">
+        <h2>鉴权</h2>
+        <label>Idol Key</label>
+        <input id="idolKey" value="idol-dev-key">
+    </div>
+
+    <div class="panel">
+        <h2>偶像信息编辑</h2>
+        <div class="row">
+            <div>
+                <label>偶像 ID</label>
+                <input id="idolId" value="1">
+            </div>
+            <div>
+                <label>用户名</label>
+                <input id="idolUsername" placeholder="可选">
+            </div>
+            <div>
+                <label>头像</label>
+                <input id="idolAvatar" placeholder="可选">
+            </div>
+            <div>
+                <label>体力 (0-100)</label>
+                <input id="idolStamina" type="number" min="0" max="100" placeholder="可选">
+            </div>
+            <div>
+                <label>心情 (0-100)</label>
+                <input id="idolMood" type="number" min="0" max="100" placeholder="可选">
+            </div>
+            <div>
+                <label>人设摘要</label>
+                <textarea id="idolPersona" rows="2" placeholder="可选"></textarea>
+            </div>
+        </div>
+        <button class="btn" id="saveIdolBtn">保存偶像信息</button>
+    </div>
+
+    <div class="panel">
+        <h2>用户</h2>
+        <table>
+            <thead><tr><th>ID</th><th>用户名</th><th>角色</th><th>头像</th><th>人设</th></tr></thead>
+            <tbody id="usersBody"></tbody>
+        </table>
+    </div>
+
+    <div class="panel">
+        <h2>偶像状态</h2>
+        <table>
+            <thead><tr><th>偶像ID</th><th>体力</th><th>心情</th><th>最后活跃</th></tr></thead>
+            <tbody id="statusBody"></tbody>
+        </table>
+    </div>
+
+    <div class="panel">
+        <h2>帖子</h2>
+        <table>
+            <thead><tr><th>ID</th><th>作者</th><th>话题偶像</th><th>类型</th><th>内容</th><th>时间</th></tr></thead>
+            <tbody id="postsBody"></tbody>
+        </table>
+    </div>
+
+    <div class="panel">
+        <h2>评论</h2>
+        <table>
+            <thead><tr><th>ID</th><th>帖子ID</th><th>作者</th><th>内容</th><th>时间</th></tr></thead>
+            <tbody id="commentsBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const apiBase = "http://localhost:8080/api";
+
+    async function request(path, options = {}) {
+        const idolKey = document.getElementById("idolKey").value.trim();
+        const incomingHeaders = options.headers || {};
+        const response = await fetch(`${apiBase}${path}`, {
+            headers: { "Content-Type": "application/json", "X-IDOL-KEY": idolKey, ...incomingHeaders },
+            ...options
+        });
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || `HTTP ${response.status}`);
+        }
+        return response.json();
+    }
+
+    function renderRows(id, html) {
+        document.getElementById(id).innerHTML = html || "<tr><td colspan='6'>暂无数据</td></tr>";
+    }
+
+    async function loadDashboard() {
+        const dashboard = await request("/admin/dashboard");
+        renderRows("usersBody", dashboard.users.map(user => `
+            <tr>
+                <td>${user.id}</td>
+                <td>${user.username}</td>
+                <td>${user.role}</td>
+                <td>${user.avatarUrl || ""}</td>
+                <td>${user.personaSummary || ""}</td>
+            </tr>
+        `).join(""));
+        renderRows("statusBody", dashboard.idolStatuses.map(status => `
+            <tr>
+                <td>${status.idolId}</td>
+                <td>${status.stamina}</td>
+                <td>${status.mood}</td>
+                <td>${status.lastActiveAt || ""}</td>
+            </tr>
+        `).join(""));
+        renderRows("postsBody", dashboard.posts.map(post => `
+            <tr>
+                <td>${post.id}</td>
+                <td>${post.authorName}</td>
+                <td>${post.topicIdolId}</td>
+                <td>${post.type}</td>
+                <td>${post.content}</td>
+                <td>${post.createdAt}</td>
+            </tr>
+        `).join(""));
+        renderRows("commentsBody", dashboard.comments.map(comment => `
+            <tr>
+                <td>${comment.id}</td>
+                <td>${comment.postId}</td>
+                <td>${comment.authorName}</td>
+                <td>${comment.content}</td>
+                <td>${comment.createdAt}</td>
+            </tr>
+        `).join(""));
+    }
+
+    async function saveIdol() {
+        const idolId = Number(document.getElementById("idolId").value);
+        const username = document.getElementById("idolUsername").value.trim();
+        const avatarUrl = document.getElementById("idolAvatar").value.trim();
+        const personaSummary = document.getElementById("idolPersona").value.trim();
+        const staminaRaw = document.getElementById("idolStamina").value.trim();
+        const moodRaw = document.getElementById("idolMood").value.trim();
+        const payload = {
+            username: username || null,
+            avatarUrl: avatarUrl || null,
+            personaSummary: personaSummary || null,
+            stamina: staminaRaw ? Number(staminaRaw) : null,
+            mood: moodRaw ? Number(moodRaw) : null
+        };
+        await request(`/admin/idols/${idolId}`, {
+            method: "PUT",
+            body: JSON.stringify(payload)
+        });
+        await loadDashboard();
+    }
+
+    document.getElementById("saveIdolBtn").addEventListener("click", () => {
+        saveIdol().catch(error => {
+            alert(`保存失败: ${error.message}`);
+        });
+    });
+
+    loadDashboard().catch(error => {
+        alert(`加载失败: ${error.message}`);
+    });
+</script>
+</body>
+</html>

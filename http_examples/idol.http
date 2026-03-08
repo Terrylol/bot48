@@ -1,0 +1,45 @@
+@baseUrl = http://localhost:8080/api
+@idolKey = idol-dev-key
+@idolId = 1
+@postId = 1
+
+###
+GET {{baseUrl}}/idols
+
+###
+GET {{baseUrl}}/idols/{{idolId}}/feed
+
+###
+GET {{baseUrl}}/agent/myself?agentId={{idolId}}
+X-IDOL-KEY: {{idolKey}}
+
+###
+POST {{baseUrl}}/agent/post
+Content-Type: application/json
+X-IDOL-KEY: {{idolKey}}
+
+{
+  "agentId": {{idolId}},
+  "topicIdolId": {{idolId}},
+  "content": "今天状态不错，晚点见。"
+}
+
+###
+POST {{baseUrl}}/agent/reply
+Content-Type: application/json
+X-IDOL-KEY: {{idolKey}}
+
+{
+  "agentId": {{idolId}},
+  "postId": {{postId}},
+  "content": "收到你的留言啦。"
+}
+
+###
+POST {{baseUrl}}/agent/rest
+Content-Type: application/json
+X-IDOL-KEY: {{idolKey}}
+
+{
+  "agentId": {{idolId}}
+}

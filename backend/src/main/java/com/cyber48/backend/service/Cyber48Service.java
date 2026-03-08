@@ -2,6 +2,7 @@ package com.cyber48.backend.service;
 
 import com.cyber48.backend.dto.AgentReplyRequest;
 import com.cyber48.backend.dto.AgentRestRequest;
+import com.cyber48.backend.dto.AdminCreateIdolRequest;
 import com.cyber48.backend.dto.AdminDashboardDto;
 import com.cyber48.backend.dto.AdminIdolStatusDto;
 import com.cyber48.backend.dto.AdminUpdateIdolRequest;
@@ -33,6 +34,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class Cyber48Service {
@@ -229,6 +231,46 @@ public class Cyber48Service {
                 .map(DtoMapper::toCommentDto)
                 .toList();
         return new AdminDashboardDto(users, statuses, posts, comments);
+    }
+
+    @Transactional
+    public Map<String, Long> adminResetAllData() {
+        long users = userRepository.count();
+        long statuses = idolStatusRepository.count();
+        long posts = postRepository.count();
+        long comments = commentRepository.count();
+        commentRepository.deleteAllInBatch();
+        postRepository.deleteAllInBatch();
+        idolStatusRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
+        return Map.of(
+                "deletedUsers", users,
+                "deletedStatuses", statuses,
+                "deletedPosts", posts,
+                "deletedComments", comments
+        );
+    }
+
+    @Transactional
+    public IdolSummaryDto adminCreateIdol(AdminCreateIdolRequest request) {
+        String username = request.username().trim();
+        if (userRepository.existsByUsername(username)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "username already exists");
+        }
+        UserEntity idol = new UserEntity();
+        idol.setUsername(username);
+        idol.setRole(UserRole.IDOL);
+        idol.setAvatarUrl(request.avatarUrl() == null ? "🎤" : request.avatarUrl().trim());
+        idol.setPersonaSummary(request.personaSummary() == null ? "新偶像" : request.personaSummary().trim());
+        UserEntity saved = userRepository.save(idol);
+
+        IdolStatusEntity status = new IdolStatusEntity();
+        status.setIdolId(saved.getId());
+        status.setStamina(clamp(request.stamina() == null ? 70 : request.stamina()));
+        status.setMood(clamp(request.mood() == null ? 75 : request.mood()));
+        status.setLastActiveAt(LocalDateTime.now());
+        idolStatusRepository.save(status);
+        return DtoMapper.toIdolSummary(saved, status);
     }
 
     @Transactional

@@ -15,7 +15,14 @@
 - 用户名：`root`
 - 密码：`root`
 
-首次启动会自动执行建表与种子数据初始化。
+首次启动会自动执行建表（`spring.jpa.hibernate.ddl-auto=update`）。
+
+当前核心数据表共 4 张：
+
+- `users`：账号主表，存用户身份（IDOL/FAN）、用户名、密码哈希、头像、人设、是否 agent 托管
+- `idol_status`：偶像状态表，按 `idol_id` 记录 stamina、mood、last_active_at
+- `posts`：帖子表，记录作者、话题偶像、帖子类型（OFFICIAL/FAN）、内容与创建时间
+- `comments`：评论表，记录评论所属帖子、评论作者、内容与创建时间
 
 ## 3. 一键启动
 
@@ -28,7 +35,8 @@
 会启动：
 
 - 后端：`http://localhost:8080`
-- 前端话题页：`http://localhost:4173/`
+- 前端话题页（只读）：`http://localhost:4173/`
+- 前端开发路径（可评论发帖）：`http://localhost:4173/dev.html`
 - 运营后台：`http://localhost:4173/admin.html`
 
 停止服务：

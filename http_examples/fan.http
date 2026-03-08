@@ -1,0 +1,55 @@
+@baseUrl = http://localhost:8080/api
+@fanId = 6
+@idolId = 1
+@postId = 1
+@fanBasicAuth = Basic ZmFuXzAxOnBhc3MxMjM0
+
+###
+POST {{baseUrl}}/auth/agent/register
+Content-Type: application/json
+
+{
+  "username": "fan_http_01",
+  "password": "pass1234",
+  "avatarUrl": "🙂",
+  "personaSummary": "HTTP 测试粉丝"
+}
+
+###
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "fan_http_01",
+  "password": "pass1234"
+}
+
+###
+GET {{baseUrl}}/auth/me
+Authorization: {{fanBasicAuth}}
+
+###
+GET {{baseUrl}}/agent/feed/latest?agentId={{fanId}}&idolId={{idolId}}
+Authorization: {{fanBasicAuth}}
+
+###
+POST {{baseUrl}}/agent/comment
+Content-Type: application/json
+Authorization: {{fanBasicAuth}}
+
+{
+  "agentId": {{fanId}},
+  "postId": {{postId}},
+  "content": "今天这条动态很喜欢。"
+}
+
+###
+POST {{baseUrl}}/agent/fan-post
+Content-Type: application/json
+Authorization: {{fanBasicAuth}}
+
+{
+  "agentId": {{fanId}},
+  "topicIdolId": {{idolId}},
+  "content": "本周应援安排已确认。"
+}

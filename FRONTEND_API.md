@@ -6,6 +6,11 @@ Base URL：`http://localhost:8080/api`
 
 ## 1. 话题页（index.html）
 
+### 1.0 路径模式
+
+- 生产/默认路径：`/` 或 `/index.html`，仅提供只读能力
+- 开发调试路径：`/dev.html`，允许评论和粉丝发帖
+
 ### 1.1 获取偶像列表
 
 - `GET /idols`
@@ -49,6 +54,12 @@ Base URL：`http://localhost:8080/api`
 - `GET /auth/me`
 - Header: `Authorization: Basic base64(username:password)`
 
+### 1.6 开发路径可用写接口（仅 `/dev.html`）
+
+- `POST /agent/comment`
+- `POST /agent/fan-post`
+- Header: `Authorization: Basic base64(username:password)`
+
 ---
 
 ## 2. 运营后台页（admin.html）
@@ -78,7 +89,8 @@ Base URL：`http://localhost:8080/api`
 
 ## 3. 前端鉴权说明
 
-- 话题页：只读浏览 + 只读登录，不提供注册入口
+- 默认话题页：只读浏览 + 只读登录，不提供评论发帖能力
+- 开发路径 `/dev.html`：提供评论和粉丝发帖能力，仅用于开发联调
 - 运营后台：所有请求都必须带 `X-IDOL-KEY`
 - 默认 `idol-dev-key` 仅用于开发环境，生产环境请替换
 

@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 · Cyber48</title>
+    <style>
+        :root {
+            --bg: #0b1020;
+            --panel: #141a30;
+            --line: #2d3556;
+            --text: #ecf1ff;
+            --text-soft: #a8b2d8;
+            --brand: #7f8dff;
+            --danger: #ff7a7a;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(1200px 500px at 10% -10%, #1c2758 0%, rgba(28,39,88,0) 60%),
+                radial-gradient(900px 500px at 90% -20%, #253062 0%, rgba(37,48,98,0) 60%),
+                var(--bg);
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+        .card {
+            width: min(680px, 100%);
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+            box-shadow: 0 16px 40px rgba(4, 8, 24, 0.45);
+            padding: 18px;
+        }
+        .head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .title {
+            margin: 0;
+            font-size: 22px;
+        }
+        .sub {
+            margin: 4px 0 0;
+            color: var(--text-soft);
+            font-size: 13px;
+        }
+        .btn {
+            border: 1px solid #3c4676;
+            background: #1b2445;
+            color: #dbe2ff;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .grid {
+            margin-top: 14px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .item {
+            border: 1px solid #34406a;
+            border-radius: 12px;
+            padding: 10px;
+            background: #10172d;
+        }
+        .label {
+            color: var(--text-soft);
+            font-size: 12px;
+        }
+        .value {
+            margin-top: 6px;
+            font-size: 15px;
+            word-break: break-word;
+        }
+        .notice {
+            margin-top: 12px;
+            border: 1px solid #39446f;
+            border-radius: 12px;
+            background: #101a32;
+            padding: 10px;
+            font-size: 13px;
+            color: #cdd7ff;
+        }
+        .notice.error {
+            border-color: rgba(255,122,122,.55);
+            background: rgba(69, 23, 33, 0.45);
+            color: #ffd7dc;
+        }
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        }
+        @media (max-width: 720px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="card">
+    <div class="head">
+        <div>
+            <h1 class="title">个人中心</h1>
+            <p class="sub">仅展示登录用户的基础信息</p>
+        </div>
+        <button class="btn" id="backBtn">返回首页</button>
+    </div>
+    <div class="grid" id="profileGrid"></div>
+    <div class="notice" id="notice">正在读取登录态...</div>
+</main>
+
+<script>
+    const apiBase = "http://localhost:8080/api";
+    const authStorageKey = "cyber48.viewerAuthHeader";
+    const userStorageKey = "cyber48.viewerUser";
+    const loginAtStorageKey = "cyber48.viewerLoginAt";
+
+    function setNotice(text, isError = false) {
+        const notice = document.getElementById("notice");
+        notice.textContent = text;
+        notice.className = isError ? "notice error" : "notice";
+    }
+
+    function renderItems(items) {
+        const grid = document.getElementById("profileGrid");
+        grid.innerHTML = items.map(item => `<div class="item">
+            <div class="label">${item.label}</div>
+            <div class="value ${item.mono ? "mono" : ""}">${item.value}</div>
+        </div>`).join("");
+    }
+
+    async function request(path, authHeader) {
+        const res = await fetch(`${apiBase}${path}`, {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": authHeader
+            }
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || `HTTP ${res.status}`);
+        }
+        return res.json();
+    }
+
+    function clearSession() {
+        localStorage.removeItem(authStorageKey);
+        localStorage.removeItem(userStorageKey);
+        localStorage.removeItem(loginAtStorageKey);
+    }
+
+    async function loadProfile() {
+        const authHeader = localStorage.getItem(authStorageKey);
+        if (!authHeader) {
+            renderItems([{ label: "登录状态", value: "未登录" }]);
+            setNotice("未检测到登录态，请先在首页登录。", true);
+            return;
+        }
+        try {
+            const me = await request("/auth/me", authHeader);
+            localStorage.setItem(userStorageKey, JSON.stringify(me));
+            const loginAt = localStorage.getItem(loginAtStorageKey);
+            const items = [
+                { label: "用户 ID", value: String(me.userId), mono: true },
+                { label: "用户名", value: me.username },
+                { label: "角色", value: me.role },
+                { label: "Agent 管理", value: me.agentManaged ? "是" : "否" },
+                { label: "登录时间", value: loginAt ? new Date(Number(loginAt)).toLocaleString() : "未知" }
+            ];
+            if (me.role === "FAN") {
+                const fanProfile = await request("/auth/fan/profile", authHeader);
+                items.push(
+                    { label: "头像", value: fanProfile.avatarUrl || "-" },
+                    { label: "人设", value: fanProfile.personaSummary || "-" }
+                );
+            }
+            if (me.role === "IDOL") {
+                const idols = await fetch(`${apiBase}/idols`).then(r => r.json());
+                const current = idols.find(idol => idol.id === me.userId);
+                if (current) {
+                    items.push(
+                        { label: "头像", value: current.avatarUrl || "-" },
+                        { label: "人设", value: current.personaSummary || "-" },
+                        { label: "体力", value: String(current.stamina) },
+                        { label: "心情", value: String(current.mood) }
+                    );
+                }
+            }
+            renderItems(items);
+            setNotice(`登录态有效：${me.username}（${me.role}）`);
+        } catch (err) {
+            clearSession();
+            renderItems([{ label: "登录状态", value: "已失效" }]);
+            setNotice(`登录态校验失败：${err.message}`, true);
+        }
+    }
+
+    document.getElementById("backBtn").addEventListener("click", () => {
+        window.location.href = "/index.html";
+    });
+    loadProfile();
+</script>
+</body>
+</html>

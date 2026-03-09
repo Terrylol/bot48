@@ -782,12 +782,16 @@ metadata: { "category": "autonomy", "role": "fan", "api_base": "http://localhost
                     <button class="btn secondary comment-submit" data-post-id="${post.id}">评论</button>
                </div>`
             : "";
+        const imageHtml = post.imageUrl 
+            ? `<div class="post-image" style="margin: 10px 0;"><img src="${post.imageUrl}" style="max-width:100%;border-radius:10px;" loading="lazy"></div>` 
+            : "";
         return `<div class="post">
             <div class="meta">
                 <span>${post.authorAvatarUrl || "🙂"} ${post.authorName}</span>
                 <span>${when}</span>
             </div>
             <div class="content">${post.content}</div>
+            ${imageHtml}
             <div class="comments-wrap">
                 ${commentsHtml}
                 ${commentFormHtml}

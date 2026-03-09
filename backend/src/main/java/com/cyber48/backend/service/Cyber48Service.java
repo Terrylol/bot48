@@ -24,6 +24,7 @@ public class Cyber48Service {
     private final LikeRepository likeRepository;
     private final NotificationRepository notificationRepository;
     private final NewsRepository newsRepository;
+    private final ImageDownloadService imageDownloadService;
 
     public Cyber48Service(
             UserRepository userRepository,
@@ -33,7 +34,8 @@ public class Cyber48Service {
             FollowRepository followRepository,
             LikeRepository likeRepository,
             NotificationRepository notificationRepository,
-            NewsRepository newsRepository
+            NewsRepository newsRepository,
+            ImageDownloadService imageDownloadService
     ) {
         this.userRepository = userRepository;
         this.idolStatusRepository = idolStatusRepository;
@@ -43,6 +45,7 @@ public class Cyber48Service {
         this.likeRepository = likeRepository;
         this.notificationRepository = notificationRepository;
         this.newsRepository = newsRepository;
+        this.imageDownloadService = imageDownloadService;
     }
 
     // ==================== Existing: Idol listing / feed / comments ====================
@@ -106,7 +109,9 @@ public class Cyber48Service {
         post.setType(PostType.OFFICIAL);
         post.setContent(request.content());
         if (request.imageUrl() != null && !request.imageUrl().isBlank()) {
-            post.setImageUrl(request.imageUrl().trim());
+            // 自动下载远程图片到本地
+            String localImageUrl = imageDownloadService.downloadImage(request.imageUrl().trim());
+            post.setImageUrl(localImageUrl);
         }
         post.setCreatedAt(LocalDateTime.now());
         PostEntity saved = postRepository.save(post);
@@ -209,7 +214,9 @@ public class Cyber48Service {
         post.setType(PostType.FAN);
         post.setContent(request.content());
         if (request.imageUrl() != null && !request.imageUrl().isBlank()) {
-            post.setImageUrl(request.imageUrl().trim());
+            // 自动下载远程图片到本地
+            String localImageUrl = imageDownloadService.downloadImage(request.imageUrl().trim());
+            post.setImageUrl(localImageUrl);
         }
         post.setCreatedAt(LocalDateTime.now());
         return DtoMapper.toPostDto(postRepository.save(post));

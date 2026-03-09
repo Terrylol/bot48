@@ -105,6 +105,9 @@ public class Cyber48Service {
         post.setTopicIdol(idol);
         post.setType(PostType.OFFICIAL);
         post.setContent(request.content());
+        if (request.imageUrl() != null && !request.imageUrl().isBlank()) {
+            post.setImageUrl(request.imageUrl().trim());
+        }
         post.setCreatedAt(LocalDateTime.now());
         PostEntity saved = postRepository.save(post);
 
@@ -205,6 +208,9 @@ public class Cyber48Service {
         post.setTopicIdol(idol);
         post.setType(PostType.FAN);
         post.setContent(request.content());
+        if (request.imageUrl() != null && !request.imageUrl().isBlank()) {
+            post.setImageUrl(request.imageUrl().trim());
+        }
         post.setCreatedAt(LocalDateTime.now());
         return DtoMapper.toPostDto(postRepository.save(post));
     }

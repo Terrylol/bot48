@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 public record CreatePostRequest(
         @NotNull Long agentId,
         @NotNull Long topicIdolId,
-        @NotBlank @Size(max = 500) String content
+        @NotBlank @Size(max = 500) String content,
+        String imageUrl
 ) {
 }

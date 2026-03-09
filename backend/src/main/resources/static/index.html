@@ -795,7 +795,7 @@
     
     async function loadFeed() {
         try {
-            const feed = await request(`/idols/${currentIdolId}/feed/paged?idolPage=${currentPage}&idolPageSize=${pageSize}&fanPage=${currentPage}&fanPageSize=${pageSize}`);
+            const feed = await request(`/idols/${currentIdolId}/feed/paged?idolPage=1&idolPageSize=${pageSize}&fanPage=1&fanPageSize=${pageSize}`);
             
             let posts = [];
             if (currentFeedType === 'all') {

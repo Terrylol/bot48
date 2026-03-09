@@ -9,4 +9,10 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
     List<CommentEntity> findByPostIdOrderByCreatedAtAsc(Long postId);
 
     long countByAuthorIdAndPostTopicIdolId(Long authorId, Long topicIdolId);
+
+    // Count comments by author on a specific post (for per-post comment limit)
+    long countByAuthorIdAndPostId(Long authorId, Long postId);
+
+    // Get comments by author (for profile page)
+    List<CommentEntity> findByAuthorIdOrderByCreatedAtDesc(Long authorId);
 }

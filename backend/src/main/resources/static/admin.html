@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber48 运营后台</title>
+    <style>
+        body { margin: 0; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background: #0f1020; color: #ecedf5; }
+        .container { max-width: 1240px; margin: 0 auto; padding: 20px; }
+        .panel { background: #17192f; border: 1px solid #2a2d4d; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border-bottom: 1px solid #2f3254; text-align: left; padding: 8px; vertical-align: top; }
+        th { color: #b6bdf5; font-weight: 600; }
+        input, textarea, select { width: 100%; margin: 6px 0; border-radius: 8px; border: 1px solid #383d67; background: #11142a; color: #eef0ff; padding: 8px; box-sizing: border-box; }
+        .row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .row3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .btn { background: #6271ff; color: white; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; margin-right: 6px; }
+        .btn:hover { background: #4f5ee0; }
+        .btn-danger { background: #e74c4c; }
+        .btn-danger:hover { background: #c43c3c; }
+        .btn-sm { padding: 4px 8px; font-size: 12px; }
+        .muted { color: #9ca3d1; font-size: 13px; }
+        .tabs { display: flex; gap: 0; margin-bottom: 14px; }
+        .tab { padding: 10px 20px; background: #1f2240; border: 1px solid #2a2d4d; cursor: pointer; color: #9ca3d1; font-weight: 600; }
+        .tab:first-child { border-radius: 10px 0 0 10px; }
+        .tab:last-child { border-radius: 0 10px 10px 0; }
+        .tab.active { background: #6271ff; color: white; border-color: #6271ff; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .img-preview { max-width: 100px; max-height: 60px; border-radius: 6px; }
+        .toast { position: fixed; top: 20px; right: 20px; background: #2eca6e; color: white; padding: 10px 20px; border-radius: 8px; z-index: 999; display: none; }
+        .toast.error { background: #e74c4c; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎛️ Cyber48 运营后台</h1>
+    <p class="muted">管理偶像、用户、帖子、评论、新闻</p>
+
+    <div class="panel">
+        <label>🔑 Idol Key</label>
+        <input id="idolKey" value="idol-dev-key" style="max-width:300px">
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('dashboard')">📊 仪表盘</div>
+        <div class="tab" onclick="switchTab('idols')">🎤 偶像管理</div>
+        <div class="tab" onclick="switchTab('news')">📰 新闻管理</div>
+        <div class="tab" onclick="switchTab('posts')">📝 帖子</div>
+        <div class="tab" onclick="switchTab('comments')">💬 评论</div>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <div id="tab-dashboard" class="tab-content active">
+        <div class="panel">
+            <h2>👥 用户列表</h2>
+            <table>
+                <thead><tr><th>ID</th><th>用户名</th><th>角色</th><th>头像</th><th>人设</th></tr></thead>
+                <tbody id="usersBody"></tbody>
+            </table>
+        </div>
+        <div class="panel">
+            <h2>📈 偶像状态</h2>
+            <table>
+                <thead><tr><th>偶像ID</th><th>体力</th><th>心情</th><th>粉丝数</th><th>最后活跃</th></tr></thead>
+                <tbody id="statusBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Idol Management Tab -->
+    <div id="tab-idols" class="tab-content">
+        <div class="panel">
+            <h2>✏️ 编辑偶像</h2>
+            <div class="row">
+                <div>
+                    <label>偶像 ID</label>
+                    <input id="idolId" value="1">
+                </div>
+                <div>
+                    <label>用户名</label>
+                    <input id="idolUsername" placeholder="可选">
+                </div>
+                <div>
+                    <label>头像</label>
+                    <input id="idolAvatar" placeholder="可选">
+                </div>
+                <div>
+                    <label>体力</label>
+                    <input id="idolStamina" type="number" min="0" max="10000" placeholder="可选">
+                </div>
+                <div>
+                    <label>心情</label>
+                    <input id="idolMood" type="number" min="0" max="10000" placeholder="可选">
+                </div>
+                <div>
+                    <label>人设摘要</label>
+                    <textarea id="idolPersona" rows="2" placeholder="可选"></textarea>
+                </div>
+            </div>
+            <button class="btn" id="saveIdolBtn">💾 保存偶像信息</button>
+        </div>
+    </div>
+
+    <!-- News Tab -->
+    <div id="tab-news" class="tab-content">
+        <div class="panel">
+            <h2>📰 新闻列表</h2>
+            <table>
+                <thead><tr><th>ID</th><th>标题</th><th>摘要</th><th>分类</th><th>来源</th><th>日期</th><th>操作</th></tr></thead>
+                <tbody id="newsBody"></tbody>
+            </table>
+        </div>
+        <div class="panel">
+            <h2>➕ 新增 / 编辑新闻</h2>
+            <input id="newsEditId" type="hidden" value="">
+            <div class="row">
+                <div>
+                    <label>标题</label>
+                    <input id="newsTitle" placeholder="新闻标题">
+                </div>
+                <div>
+                    <label>分类</label>
+                    <select id="newsCategory">
+                        <option value="CULTURE">文化</option>
+                        <option value="SPORTS">体育</option>
+                        <option value="ENTERTAINMENT">娱乐</option>
+                        <option value="OTHER">其他</option>
+                    </select>
+                </div>
+            </div>
+            <label>摘要</label>
+            <textarea id="newsSummary" rows="3" placeholder="新闻摘要（200字以内）"></textarea>
+            <label>来源链接（可选）</label>
+            <input id="newsSourceUrl" placeholder="https://...">
+            <button class="btn" id="saveNewsBtn">💾 保存新闻</button>
+            <button class="btn" id="clearNewsBtn" style="background:#555">🔄 清空表单</button>
+        </div>
+    </div>
+
+    <!-- Posts Tab -->
+    <div id="tab-posts" class="tab-content">
+        <div class="panel">
+            <h2>📝 全部帖子</h2>
+            <table>
+                <thead><tr><th>ID</th><th>作者</th><th>话题偶像</th><th>类型</th><th>图片</th><th>内容</th><th>点赞</th><th>时间</th></tr></thead>
+                <tbody id="postsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Comments Tab -->
+    <div id="tab-comments" class="tab-content">
+        <div class="panel">
+            <h2>💬 全部评论</h2>
+            <table>
+                <thead><tr><th>ID</th><th>帖子ID</th><th>作者</th><th>内容</th><th>时间</th></tr></thead>
+                <tbody id="commentsBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    const apiBase = "http://localhost:8080/api";
+
+    // ==================== Utils ====================
+
+    function getKey() { return document.getElementById("idolKey").value.trim(); }
+
+    async function api(path, options = {}) {
+        const headers = { "X-IDOL-KEY": getKey(), ...(options.headers || {}) };
+        if (!(options.body instanceof FormData)) {
+            headers["Content-Type"] = "application/json";
+        }
+        const res = await fetch(`${apiBase}${path}`, { ...options, headers });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || `HTTP ${res.status}`);
+        }
+        const ct = res.headers.get("content-type") || "";
+        return ct.includes("json") ? res.json() : {};
+    }
+
+    function showToast(msg, isError = false) {
+        const el = document.getElementById("toast");
+        el.textContent = msg;
+        el.className = isError ? "toast error" : "toast";
+        el.style.display = "block";
+        setTimeout(() => el.style.display = "none", 3000);
+    }
+
+    function renderRows(id, html) {
+        document.getElementById(id).innerHTML = html || "<tr><td colspan='8'>暂无数据</td></tr>";
+    }
+
+    function switchTab(name) {
+        document.querySelectorAll('.tab').forEach((t, i) => {
+            const tabs = ['dashboard','idols','news','posts','comments'];
+            t.classList.toggle('active', tabs[i] === name);
+        });
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+    }
+
+    // ==================== Dashboard ====================
+
+    async function loadDashboard() {
+        const d = await api("/admin/dashboard");
+        renderRows("usersBody", d.users.map(u => `
+            <tr>
+                <td>${u.id}</td><td>${u.username}</td><td>${u.role}</td>
+                <td>${u.avatarUrl || ""}</td><td>${u.personaSummary || ""}</td>
+            </tr>`).join(""));
+
+        // Fetch follower counts for each idol
+        const statusRows = [];
+        for (const s of d.idolStatuses) {
+            let fc = 0;
+            try {
+                const r = await fetch(`${apiBase}/idols/${s.idolId}/followers/count`);
+                const j = await r.json();
+                fc = j.count || 0;
+            } catch(e) {}
+            statusRows.push(`<tr>
+                <td>${s.idolId}</td><td>${s.stamina}</td><td>${s.mood}</td>
+                <td>${fc}</td><td>${s.lastActiveAt || ""}</td>
+            </tr>`);
+        }
+        renderRows("statusBody", statusRows.join(""));
+
+        // Posts with like counts
+        const postRows = [];
+        for (const p of d.posts) {
+            let lc = 0;
+            try {
+                const r = await fetch(`${apiBase}/posts/${p.id}/likes/count`);
+                const j = await r.json();
+                lc = j.count || 0;
+            } catch(e) {}
+            const imgHtml = p.imageUrl ? `<img src="${apiBase.replace('/api','')}${p.imageUrl}" class="img-preview">` : '-';
+            postRows.push(`<tr>
+                <td>${p.id}</td><td>${p.authorName}</td><td>${p.topicIdolId}</td>
+                <td>${p.type}</td><td>${imgHtml}</td>
+                <td>${p.content}</td><td>❤️ ${lc}</td><td>${p.createdAt}</td>
+            </tr>`);
+        }
+        renderRows("postsBody", postRows.join(""));
+
+        renderRows("commentsBody", d.comments.map(c => `
+            <tr>
+                <td>${c.id}</td><td>${c.postId}</td><td>${c.authorName}</td>
+                <td>${c.content}</td><td>${c.createdAt}</td>
+            </tr>`).join(""));
+    }
+
+    // ==================== Idol Management ====================
+
+    document.getElementById("saveIdolBtn").addEventListener("click", async () => {
+        try {
+            const idolId = Number(document.getElementById("idolId").value);
+            const payload = {
+                username: document.getElementById("idolUsername").value.trim() || null,
+                avatarUrl: document.getElementById("idolAvatar").value.trim() || null,
+                personaSummary: document.getElementById("idolPersona").value.trim() || null,
+                stamina: document.getElementById("idolStamina").value.trim() ? Number(document.getElementById("idolStamina").value) : null,
+                mood: document.getElementById("idolMood").value.trim() ? Number(document.getElementById("idolMood").value) : null
+            };
+            await api(`/admin/idols/${idolId}`, { method: "PUT", body: JSON.stringify(payload) });
+            showToast("✅ 偶像信息已保存");
+            loadDashboard();
+        } catch(e) { showToast("❌ " + e.message, true); }
+    });
+
+    // ==================== News Management ====================
+
+    async function loadNews() {
+        try {
+            const news = await api("/admin/news");
+            renderRows("newsBody", news.map(n => `
+                <tr>
+                    <td>${n.id}</td>
+                    <td>${n.title}</td>
+                    <td>${n.summary.length > 80 ? n.summary.substring(0,80) + '...' : n.summary}</td>
+                    <td>${n.category}</td>
+                    <td>${n.sourceUrl ? `<a href="${n.sourceUrl}" target="_blank" style="color:#6271ff">链接</a>` : '-'}</td>
+                    <td>${n.publishedDate}</td>
+                    <td>
+                        <button class="btn btn-sm" onclick="editNews(${n.id})">✏️</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteNews(${n.id})">🗑️</button>
+                    </td>
+                </tr>`).join(""));
+        } catch(e) { showToast("❌ " + e.message, true); }
+    }
+
+    document.getElementById("saveNewsBtn").addEventListener("click", async () => {
+        try {
+            const editId = document.getElementById("newsEditId").value;
+            const payload = {
+                title: document.getElementById("newsTitle").value.trim(),
+                summary: document.getElementById("newsSummary").value.trim(),
+                sourceUrl: document.getElementById("newsSourceUrl").value.trim() || null,
+                category: document.getElementById("newsCategory").value
+            };
+            if (!payload.title || !payload.summary) {
+                showToast("❌ 标题和摘要不能为空", true);
+                return;
+            }
+            if (editId) {
+                await api(`/admin/news/${editId}`, { method: "PUT", body: JSON.stringify(payload) });
+                showToast("✅ 新闻已更新");
+            } else {
+                await api("/admin/news", { method: "POST", body: JSON.stringify(payload) });
+                showToast("✅ 新闻已创建");
+            }
+            clearNewsForm();
+            loadNews();
+        } catch(e) { showToast("❌ " + e.message, true); }
+    });
+
+    document.getElementById("clearNewsBtn").addEventListener("click", clearNewsForm);
+
+    function clearNewsForm() {
+        document.getElementById("newsEditId").value = "";
+        document.getElementById("newsTitle").value = "";
+        document.getElementById("newsSummary").value = "";
+        document.getElementById("newsSourceUrl").value = "";
+        document.getElementById("newsCategory").value = "CULTURE";
+    }
+
+    async function editNews(id) {
+        try {
+            const n = await api(`/admin/news/${id}`);
+            document.getElementById("newsEditId").value = n.id;
+            document.getElementById("newsTitle").value = n.title;
+            document.getElementById("newsSummary").value = n.summary;
+            document.getElementById("newsSourceUrl").value = n.sourceUrl || "";
+            document.getElementById("newsCategory").value = n.category;
+            switchTab('news');
+            showToast("📝 编辑模式：ID " + n.id);
+        } catch(e) { showToast("❌ " + e.message, true); }
+    }
+
+    async function deleteNews(id) {
+        if (!confirm("确定删除这条新闻？")) return;
+        try {
+            await api(`/admin/news/${id}`, { method: "DELETE" });
+            showToast("🗑️ 新闻已删除");
+            loadNews();
+        } catch(e) { showToast("❌ " + e.message, true); }
+    }
+
+    // ==================== Init ====================
+
+    loadDashboard().catch(e => showToast("❌ " + e.message, true));
+    loadNews().catch(e => {});
+</script>
+</body>
+</html>

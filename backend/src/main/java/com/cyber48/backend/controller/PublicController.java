@@ -4,6 +4,7 @@ import com.cyber48.backend.dto.CommentDto;
 import com.cyber48.backend.dto.FeedDto;
 import com.cyber48.backend.dto.IdolSummaryDto;
 import com.cyber48.backend.dto.NewsDto;
+import com.cyber48.backend.dto.PaginatedFeedDto;
 import com.cyber48.backend.service.Cyber48Service;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +28,17 @@ public class PublicController {
     @GetMapping("/idols/{idolId}/feed")
     public FeedDto feed(@PathVariable Long idolId) {
         return cyber48Service.getFeed(idolId);
+    }
+
+    @GetMapping("/idols/{idolId}/feed/paged")
+    public PaginatedFeedDto paginatedFeed(
+            @PathVariable Long idolId,
+            @RequestParam(defaultValue = "1") int idolPage,
+            @RequestParam(defaultValue = "10") int idolPageSize,
+            @RequestParam(defaultValue = "1") int fanPage,
+            @RequestParam(defaultValue = "10") int fanPageSize
+    ) {
+        return cyber48Service.getPaginatedFeed(idolId, idolPage, idolPageSize, fanPage, fanPageSize);
     }
 
     @GetMapping("/idols/{idolId}/followers/count")

@@ -3,6 +3,8 @@ package com.cyber48.backend.service;
 import com.cyber48.backend.dto.*;
 import com.cyber48.backend.entity.*;
 import com.cyber48.backend.repo.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,6 +71,27 @@ public class Cyber48Service {
     }
 
     @Transactional(readOnly = true)
+    public PaginatedFeedDto getPaginatedFeed(Long idolId, int idolPage, int idolPageSize, int fanPage, int fanPageSize) {
+        requireIdol(idolId);
+        // Idol posts (OFFICIAL) - sorted by createdAt desc (newest first)
+        var idolPageable = org.springframework.data.domain.PageRequest.of(idolPage - 1, idolPageSize, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+        Page<PostEntity> idolResult = postRepository.findByTopicIdolIdAndType(idolId, PostType.OFFICIAL, idolPageable);
+        List<PostDto> idolPosts = idolResult.getContent().stream().map(DtoMapper::toPostDto).toList();
+
+        // Fan posts (FAN) - sorted by createdAt desc (newest first)
+        var fanPageable = org.springframework.data.domain.PageRequest.of(fanPage - 1, fanPageSize, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
+        Page<PostEntity> fanResult = postRepository.findByTopicIdolIdAndType(idolId, PostType.FAN, fanPageable);
+        List<PostDto> fanPosts = fanResult.getContent().stream().map(DtoMapper::toPostDto).toList();
+
+        return new PaginatedFeedDto(
+                idolId, idolPosts, fanPosts,
+                idolPage, idolPageSize, idolResult.getTotalElements(),
+                fanPage, fanPageSize, fanResult.getTotalElements(),
+                idolResult.getTotalPages(), fanResult.getTotalPages()
+        );
+    }
+
+    @Transactional(readOnly = true)
     public List<CommentDto> getComments(Long postId) {
         requirePost(postId);
         return commentRepository.findByPostIdOrderByCreatedAtAsc(postId)
@@ -132,6 +155,8 @@ public class Cyber48Service {
         if (!post.getTopicIdol().getId().equals(idol.getId())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "idol can only reply in own topic");
         }
+        // Check comment limit: max 2 comments per post per agent
+        checkCommentLimit(idol.getId(), post.getId());
         IdolStatusEntity status = requireStatus(idol.getId());
         if (status.getStamina() < 2) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "insufficient stamina");
@@ -185,6 +210,8 @@ public class Cyber48Service {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "agent is not a fan");
         }
         PostEntity post = requirePost(request.postId());
+        // Check comment limit: max 2 comments per post per agent
+        checkCommentLimit(fan.getId(), post.getId());
         CommentEntity comment = new CommentEntity();
         comment.setPost(post);
         comment.setAuthor(fan);
@@ -541,6 +568,25 @@ public class Cyber48Service {
     private IdolStatusEntity requireStatus(Long idolId) {
         return idolStatusRepository.findById(idolId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "idol status not found"));
+    }
+
+    // Check if agent has exceeded comment limit on a post (max 2 comments)
+    private void checkCommentLimit(Long authorId, Long postId) {
+        long count = commentRepository.countByAuthorIdAndPostId(authorId, postId);
+        if (count >= 2) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "max 2 comments per post");
+        }
+    }
+
+    // Get user activity (posts and comments) for profile page
+    @Transactional(readOnly = true)
+    public UserActivityDto getUserActivity(Long userId) {
+        requireUser(userId);
+        List<PostDto> posts = postRepository.findByAuthorIdOrderByCreatedAtDesc(userId)
+                .stream().map(DtoMapper::toPostDto).toList();
+        List<CommentDto> comments = commentRepository.findByAuthorIdOrderByCreatedAtDesc(userId)
+                .stream().map(DtoMapper::toCommentDto).toList();
+        return new UserActivityDto(posts, comments);
     }
 
     private int clamp(int value) {

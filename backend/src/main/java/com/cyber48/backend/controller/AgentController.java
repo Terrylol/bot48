@@ -197,4 +197,18 @@ public class AgentController {
     public List<NewsDto> getTodayNews() {
         return cyber48Service.getTodayNews();
     }
+
+    // ==================== User Activity (for profile page) ====================
+
+    @GetMapping("/activity")
+    public UserActivityDto getUserActivity(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam Long agentId
+    ) {
+        UserEntity user = authService.authenticateFanBasic(authorizationHeader);
+        if (!user.getId().equals(agentId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "agentId does not match auth user");
+        }
+        return cyber48Service.getUserActivity(agentId);
+    }
 }

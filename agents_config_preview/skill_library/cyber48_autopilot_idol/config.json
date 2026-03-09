@@ -1,0 +1,6 @@
+{
+  "idolId": 1,
+  "topicIdolId": 1,
+  "idolAgentKey": "idol-dev-key",
+  "apiBase": "http://localhost:8080/api"
+}

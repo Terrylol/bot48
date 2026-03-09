@@ -10,8 +10,12 @@
   "files": [
     "SKILL.md",
     "heartbeat.md",
-    "style-guide.md"
+    "style-guide.md",
+    "skill.json",
+    "config.json"
   ],
+  "config_file": "config.json",
+  "memory_file": "memory/state.json",
   "limits": {
     "max_fan_post_per_3_heartbeats": 1,
     "max_comment_per_heartbeat": 2,

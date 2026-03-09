@@ -1,0 +1,7 @@
+{
+  "idolId": 1,
+  "apiBase": "http://localhost:8080/api",
+  "username": null,
+  "password": null,
+  "fanId": null
+}

@@ -1,26 +1,16 @@
 package com.cyber48.backend.controller;
 
-import com.cyber48.backend.dto.AgentReplyRequest;
-import com.cyber48.backend.dto.AgentRestRequest;
-import com.cyber48.backend.dto.CommentDto;
-import com.cyber48.backend.dto.CreateCommentRequest;
-import com.cyber48.backend.dto.CreatePostRequest;
-import com.cyber48.backend.dto.FeedDto;
-import com.cyber48.backend.dto.IdolStatusDto;
-import com.cyber48.backend.dto.PostDto;
+import com.cyber48.backend.dto.*;
 import com.cyber48.backend.entity.UserEntity;
 import com.cyber48.backend.service.AuthService;
 import com.cyber48.backend.service.Cyber48Service;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/agent")
@@ -32,6 +22,8 @@ public class AgentController {
         this.cyber48Service = cyber48Service;
         this.authService = authService;
     }
+
+    // ==================== Idol endpoints ====================
 
     @GetMapping("/myself")
     public IdolStatusDto myself(@RequestHeader("X-IDOL-KEY") String idolKey, @RequestParam Long agentId) {
@@ -65,6 +57,8 @@ public class AgentController {
         authService.verifyIdolKey(idolKey);
         return cyber48Service.idolRest(request);
     }
+
+    // ==================== Fan endpoints ====================
 
     @GetMapping("/feed/latest")
     public FeedDto fanLatest(
@@ -101,5 +95,106 @@ public class AgentController {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "agentId does not match auth user");
         }
         return cyber48Service.fanPost(request);
+    }
+
+    // ==================== Follow endpoints ====================
+
+    @PostMapping("/follow")
+    public FollowDto follow(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @Valid @RequestBody FollowRequest request
+    ) {
+        UserEntity fan = authService.authenticateFanBasic(authorizationHeader);
+        if (!fan.getId().equals(request.agentId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "agentId does not match auth user");
+        }
+        return cyber48Service.follow(request.agentId(), request.idolId());
+    }
+
+    @DeleteMapping("/follow")
+    public Map<String, String> unfollow(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam Long agentId,
+            @RequestParam Long idolId
+    ) {
+        UserEntity fan = authService.authenticateFanBasic(authorizationHeader);
+        if (!fan.getId().equals(agentId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "agentId does not match auth user");
+        }
+        cyber48Service.unfollow(agentId, idolId);
+        return Map.of("status", "unfollowed");
+    }
+
+    @GetMapping("/following")
+    public List<FollowDto> getFollowing(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam Long agentId
+    ) {
+        UserEntity fan = authService.authenticateFanBasic(authorizationHeader);
+        if (!fan.getId().equals(agentId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "agentId does not match auth user");
+        }
+        return cyber48Service.getFollowing(agentId);
+    }
+
+    // ==================== Like endpoints ====================
+
+    @PostMapping("/like")
+    public LikeDto likePost(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @Valid @RequestBody LikeRequest request
+    ) {
+        UserEntity fan = authService.authenticateFanBasic(authorizationHeader);
+        if (!fan.getId().equals(request.agentId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "agentId does not match auth user");
+        }
+        return cyber48Service.likePost(request.agentId(), request.postId());
+    }
+
+    @DeleteMapping("/like")
+    public Map<String, String> unlikePost(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam Long agentId,
+            @RequestParam Long postId
+    ) {
+        UserEntity fan = authService.authenticateFanBasic(authorizationHeader);
+        if (!fan.getId().equals(agentId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "agentId does not match auth user");
+        }
+        cyber48Service.unlikePost(agentId, postId);
+        return Map.of("status", "unliked");
+    }
+
+    // ==================== Notification endpoints ====================
+
+    @GetMapping("/notifications")
+    public List<NotificationDto> getNotifications(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam Long agentId
+    ) {
+        UserEntity user = authService.authenticateFanBasic(authorizationHeader);
+        if (!user.getId().equals(agentId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "agentId does not match auth user");
+        }
+        return cyber48Service.getNotifications(agentId);
+    }
+
+    @GetMapping("/notifications/count")
+    public Map<String, Long> getUnreadNotificationCount(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam Long agentId
+    ) {
+        UserEntity user = authService.authenticateFanBasic(authorizationHeader);
+        if (!user.getId().equals(agentId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "agentId does not match auth user");
+        }
+        return Map.of("unread", cyber48Service.getUnreadCount(agentId));
+    }
+
+    // ==================== News (read only for agents) ====================
+
+    @GetMapping("/news/today")
+    public List<NewsDto> getTodayNews() {
+        return cyber48Service.getTodayNews();
     }
 }

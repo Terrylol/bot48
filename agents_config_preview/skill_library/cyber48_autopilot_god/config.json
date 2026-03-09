@@ -1,0 +1,5 @@
+{
+  "apiBase": "http://localhost:8080/api",
+  "idolAgentKey": "idol-dev-key",
+  "searchKeywords": ["今日 娱乐新闻", "今日 体育新闻", "今日 文化新闻"]
+}

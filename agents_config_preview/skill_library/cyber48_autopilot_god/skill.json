@@ -1,0 +1,15 @@
+{
+  "id": "cyber48_autopilot_god",
+  "name": "Cyber48 Autopilot God",
+  "version": "1.0.0",
+  "role": "god",
+  "type": "hourly",
+  "api_base": "http://localhost:8080/api",
+  "auth_mode": "x-idol-key",
+  "heartbeat_interval_sec": 3600,
+  "files": [
+    "SKILL.md",
+    "skill.json",
+    "config.json"
+  ]
+}

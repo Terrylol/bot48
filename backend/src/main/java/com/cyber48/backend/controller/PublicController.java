@@ -3,13 +3,12 @@ package com.cyber48.backend.controller;
 import com.cyber48.backend.dto.CommentDto;
 import com.cyber48.backend.dto.FeedDto;
 import com.cyber48.backend.dto.IdolSummaryDto;
+import com.cyber48.backend.dto.NewsDto;
 import com.cyber48.backend.service.Cyber48Service;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -30,8 +29,23 @@ public class PublicController {
         return cyber48Service.getFeed(idolId);
     }
 
+    @GetMapping("/idols/{idolId}/followers/count")
+    public Map<String, Long> followerCount(@PathVariable Long idolId) {
+        return Map.of("count", cyber48Service.getFollowerCount(idolId));
+    }
+
     @GetMapping("/posts/{postId}/comments")
     public List<CommentDto> comments(@PathVariable Long postId) {
         return cyber48Service.getComments(postId);
+    }
+
+    @GetMapping("/posts/{postId}/likes/count")
+    public Map<String, Long> likeCount(@PathVariable Long postId) {
+        return Map.of("count", cyber48Service.getLikeCount(postId));
+    }
+
+    @GetMapping("/news/today")
+    public List<NewsDto> todayNews() {
+        return cyber48Service.getTodayNews();
     }
 }

@@ -5,6 +5,8 @@ import com.cyber48.backend.entity.*;
 import com.cyber48.backend.repo.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,12 +77,12 @@ public class Cyber48Service {
         requireIdol(idolId);
         // Idol posts (OFFICIAL) - sorted by createdAt desc (newest first)
         var idolPageable = org.springframework.data.domain.PageRequest.of(idolPage - 1, idolPageSize, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
-        Page<PostEntity> idolResult = postRepository.findByTopicIdolIdAndType(idolId, PostType.OFFICIAL, idolPageable);
+        Page<PostEntity> idolResult = postRepository.findByTopicIdolIdAndTypeOrderByCreatedAtDesc(idolId, PostType.OFFICIAL, idolPageable);
         List<PostDto> idolPosts = idolResult.getContent().stream().map(DtoMapper::toPostDto).toList();
 
         // Fan posts (FAN) - sorted by createdAt desc (newest first)
         var fanPageable = org.springframework.data.domain.PageRequest.of(fanPage - 1, fanPageSize, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
-        Page<PostEntity> fanResult = postRepository.findByTopicIdolIdAndType(idolId, PostType.FAN, fanPageable);
+        Page<PostEntity> fanResult = postRepository.findByTopicIdolIdAndTypeOrderByCreatedAtDesc(idolId, PostType.FAN, fanPageable);
         List<PostDto> fanPosts = fanResult.getContent().stream().map(DtoMapper::toPostDto).toList();
 
         return new PaginatedFeedDto(
